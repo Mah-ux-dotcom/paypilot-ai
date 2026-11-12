@@ -1,3 +1,5 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
+
 const PAYPAL_SANDBOX = "https://api-m.sandbox.paypal.com";
 
 export function getPayPalBaseUrl() {
@@ -11,9 +13,7 @@ export function getPayPalBaseUrl() {
 export async function getPayPalAccessToken() {
   const clientId = process.env.PAYPAL_CLIENT_ID;
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
-  if (!clientId || !clientSecret) {
-    throw new Error("PayPal Sandbox credentials are not configured.");
-  }
+  if (!clientId || !clientSecret) throw new Error("PayPal Sandbox credentials are not configured.");
 
   const baseUrl = getPayPalBaseUrl();
   const response = await fetch(`${baseUrl}/v1/oauth2/token`, {
@@ -26,17 +26,30 @@ export async function getPayPalAccessToken() {
     cache: "no-store",
     signal: AbortSignal.timeout(15000)
   });
-
-  if (!response.ok) {
-    throw new Error("PayPal authentication failed. Check the Sandbox app credentials.");
-  }
+  if (!response.ok) throw new Error("PayPal authentication failed. Check the Sandbox app credentials.");
 
   const data = await response.json();
   if (typeof data.access_token !== "string" || !data.access_token) {
     throw new Error("PayPal did not return an access token.");
   }
-
   return { token: data.access_token as string, baseUrl };
+}
+
+function signingSecret() {
+  const secret = process.env.PAYPAL_CLIENT_SECRET;
+  if (!secret) throw new Error("PayPal Sandbox credentials are not configured.");
+  return secret;
+}
+
+export function signOrderId(orderId: string) {
+  return createHmac("sha256", signingSecret()).update(orderId).digest("hex");
+}
+
+export function verifyOrderProof(orderId: string, signature: string) {
+  if (!/^[a-f0-9]{64}$/.test(signature)) return false;
+  const expected = Buffer.from(signOrderId(orderId), "hex");
+  const supplied = Buffer.from(signature, "hex");
+  return expected.length === supplied.length && timingSafeEqual(expected, supplied);
 }
 
 export function safePayPalError(data: unknown, fallback: string) {
