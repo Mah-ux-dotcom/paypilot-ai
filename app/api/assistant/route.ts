@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       const amount = typeof parsed.amount === "number" ? parsed.amount : Number(parsed.amount);
       const action = parsed.action === "create_payment" &&
         Number.isFinite(amount) && amount > 0 && amount <= 1000000 &&
-        Number.isInteger(Math.round(amount * 100))
+        Math.abs(amount * 100 - Math.round(amount * 100)) < 0.000001
           ? "create_payment" : "none";
       const currency = typeof parsed.currency === "string" && ALLOWED_CURRENCIES.has(parsed.currency.toUpperCase())
         ? parsed.currency.toUpperCase() : "USD";
