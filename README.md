@@ -21,7 +21,7 @@ The dashboard currently includes clearly illustrative sample analytics and trans
 
 ## Run locally
 
-1. Install Node.js 20 or later.
+1. Install Node.js 22 or later.
 2. Clone this repository and install dependencies:
 
    ```bash
@@ -66,6 +66,10 @@ The dashboard currently includes clearly illustrative sample analytics and trans
 5. PayPilot captures the approved order when PayPal redirects back.
 
 Do not use real payment credentials or real customer data in the hackathon demo.
+
+## Automated checks
+
+GitHub Actions runs ESLint, TypeScript type-checking, and a production build on pushes and pull requests to `main`. Run the same checks locally with `npm run lint`, `npm run typecheck`, and `npm run build`.
 
 ## Safety and limitations
 
