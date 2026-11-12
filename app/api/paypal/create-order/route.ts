@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getPayPalAccessToken, safePayPalError } from "@/lib/paypal";
+import { getPayPalAccessToken, safePayPalError, signOrderId } from "@/lib/paypal";
 
 export const runtime = "nodejs";
 
@@ -69,7 +69,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "PayPal did not return a valid Sandbox approval link." }, { status: 502 });
     }
 
-    return NextResponse.json({ id: data.id, approvalUrl: approval.href }, { headers: { "Cache-Control": "no-store" } });
+    const result = NextResponse.json({ id: data.id, approvalUrl: approval.href }, { headers: { "Cache-Control": "no-store" } });
+    result.cookies.set("pp_order_proof", `${data.id}.${signOrderId(data.id)}`, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/api/paypal/capture-order",
+      maxAge: 15 * 60
+    });
+    return result;
   } catch (error) {
     const message = error instanceof Error && error.name === "TimeoutError"
       ? "PayPal took too long to respond. Please try again."
