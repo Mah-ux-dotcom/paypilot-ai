@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getPayPalAccessToken, safePayPalError, verifyOrderProof } from "@/lib/paypal";
+import { captureRequestId, getPayPalAccessToken, safePayPalError, verifyOrderProof } from "@/lib/paypal";
 
 export const runtime = "nodejs";
 
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
-        "PayPal-Request-Id": `capture-${orderId}`
+        "PayPal-Request-Id": captureRequestId(orderId)
       },
       cache: "no-store",
       signal: AbortSignal.timeout(20000)
