@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 const PAYPAL_SANDBOX = "https://api-m.sandbox.paypal.com";
 
@@ -39,6 +39,10 @@ function signingSecret() {
   const secret = process.env.PAYPAL_CLIENT_SECRET;
   if (!secret) throw new Error("PayPal Sandbox credentials are not configured.");
   return secret;
+}
+
+export function captureRequestId(orderId: string) {
+  return `capture-${createHash("sha256").update(orderId).digest("hex").slice(0, 30)}`;
 }
 
 export function signOrderId(orderId: string) {
