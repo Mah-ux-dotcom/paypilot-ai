@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowDownLeft, ArrowUpRight, Bot, CheckCircle2, ChevronDown, CircleHelp, CreditCard, DollarSign, FileText, LayoutDashboard, Menu, Plus, Send, Settings, ShieldCheck, Sparkles, TrendingUp, Wallet, X } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Bot, CheckCircle2, ChevronDown, CircleHelp, CreditCard, DollarSign, FileText, LayoutDashboard, Menu, Send, Settings, ShieldCheck, Sparkles, TrendingUp, Wallet, X } from "lucide-react";
 
 type ChatMessage = { role: "assistant" | "user"; text: string };
 type PaymentDraft = { amount: number; currency: string; description: string; customer?: string | null };
@@ -16,6 +16,7 @@ export default function Home() {
   const [notice, setNotice] = useState("");
   const [mobileNav, setMobileNav] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const today = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(new Date());
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chat, draft]);
 
@@ -84,7 +85,7 @@ export default function Home() {
       </aside>
       {mobileNav && <button aria-label="Close menu" className="fixed inset-0 z-20 bg-slate-900/30 lg:hidden" onClick={() => setMobileNav(false)}/>}
       <section className="min-w-0 flex-1 px-4 py-5 sm:px-7 lg:px-10 lg:py-8">
-        <header className="mb-8 flex items-center justify-between"><div className="flex items-center gap-3"><button className="lg:hidden" onClick={() => setMobileNav(true)}><Menu/></button><div><div className="text-xs font-medium text-slate-400">Wednesday, November 12, 2026</div><h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Good morning, Jordan <span>✦</span></h1><p className="mt-1 text-sm text-slate-500">Here's what's happening with your business today.</p></div></div><div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 sm:flex"><span className="h-2 w-2 rounded-full bg-emerald-500"/> Sandbox environment</div></header>
+        <header className="mb-8 flex items-center justify-between"><div className="flex items-center gap-3"><button className="lg:hidden" onClick={() => setMobileNav(true)}><Menu/></button><div><div className="text-xs font-medium text-slate-400">{today}</div><h1 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Good morning, Jordan <span>✦</span></h1><p className="mt-1 text-sm text-slate-500">Here's what's happening with your business today.</p></div></div><div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 sm:flex"><span className="h-2 w-2 rounded-full bg-emerald-500"/> Sandbox environment</div></header>
         {notice && <div className="mb-5 flex items-center justify-between rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-800"><span>{notice}</span><button onClick={() => setNotice("")}><X size={16}/></button></div>}
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Stat title="Total revenue" value="$12,840.00" change="+12.8%" icon={<DollarSign size={18}/>} />
