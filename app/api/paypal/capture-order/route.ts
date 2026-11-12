@@ -1,17 +1,20 @@
-import { NextResponse } from "next/server";
-import { getPayPalAccessToken, safePayPalError } from "@/lib/paypal";
+import { NextRequest, NextResponse } from "next/server";
+import { getPayPalAccessToken, safePayPalError, verifyOrderProof } from "@/lib/paypal";
 
 export const runtime = "nodejs";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null);
     const orderId = body && typeof body.orderId === "string" ? body.orderId.trim() : "";
-    if (!/^[A-Z0-9-]{10, isValidLength}$/.test(orderId)) {
-      // PayPal order IDs are opaque; enforce a conservative character and length bound.
-      if (!/^[A-Za-z0-9-]{10,80}$/.test(orderId)) {
-        return NextResponse.json({ error: "A valid PayPal order ID is required." }, { status: 400 });
-      }
+    if (!/^[A-Za-z0-9-]{10,80}$/.test(orderId)) {
+      return NextResponse.json({ error: "A valid PayPal order ID is required." }, { status: 400 });
+    }
+
+    const proof = request.cookies.get("pp_order_proof")?.value || "";
+    const [proofOrderId, signature] = proof.split(".");
+    if (proofOrderId !== orderId || !signature || !verifyOrderProof(orderId, signature)) {
+      return NextResponse.json({ error: "This order was not created by this PayPilot session. Start a new payment request." }, { status: 403 });
     }
 
     const { token, baseUrl } = await getPayPalAccessToken();
@@ -32,13 +35,15 @@ export async function POST(request: Request) {
     }
 
     const capture = data.purchase_units?.[0]?.payments?.captures?.[0];
-    return NextResponse.json({
+    const result = NextResponse.json({
       id: data.id,
       status: data.status,
       captureId: capture?.id ?? null,
       captureStatus: capture?.status ?? null,
       payer: data.payer?.name?.given_name || "Customer"
     }, { headers: { "Cache-Control": "no-store" } });
+    result.cookies.set("pp_order_proof", "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/api/paypal/capture-order", maxAge: 0 });
+    return result;
   } catch (error) {
     const message = error instanceof Error && error.name === "TimeoutError"
       ? "PayPal capture timed out. Check the order status before retrying."
